@@ -28,6 +28,6 @@ This json file is created by 'java2jsonG.py'.
 6. Open the index.html. You should see the graph.
 
 ## Output
-![](https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png)
+![](https://github.com/arccoder/javapackage2treegraph/blob/master/readme/graph.jpg)
 
 ## ToDo
