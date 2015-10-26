@@ -12,7 +12,7 @@ public class MainClass
 
 	static String getStrModifier(int modifierNum)
 	{
-		String[] modifierStr = {"","public","private","unknown","protected"};
+		String[] modifierStr = {"","public","private","unknown","protected","","","","static"};
 		
 		String modifier = "";
     	if( modifierNum > modifierStr.length-1 )

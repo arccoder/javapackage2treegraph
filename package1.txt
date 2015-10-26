@@ -7,7 +7,7 @@ Class1,function1(),
 Class1,function2(),public
 Class1,function3(),private
 Class1,function4(),protected
-Class1,function5(),8
+Class1,function5(),static
 CLass2,packInt,int,24
 CLass2,pubInt,class [I,9
 CLass2,priInt,class [I,10
@@ -16,4 +16,4 @@ CLass2,function1(),
 CLass2,function2(),public
 CLass2,function3(),private
 CLass2,function4(),protected
-CLass2,function5(),8
+CLass2,function5(),static
