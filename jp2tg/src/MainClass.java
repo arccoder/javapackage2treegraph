@@ -6,21 +6,46 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.util.Vector;
+import java.util.HashMap;
 
 public class MainClass 
 {
-
+	// http://docs.oracle.com/javase/7/docs/api/constant-values.html
+	static HashMap<Integer, String> modifiers = new HashMap<Integer, String>();
+	static String modifierArray[] = {"strict","abstract","interface","native","transient","volatile","synchronized","final","static","protected","private","public"};
+	
+	static void init()
+	{
+		modifiers.put(1024,"abstract");	
+		modifiers.put(16,"final");	
+		modifiers.put(512,"interface");		
+		modifiers.put(256,"native");
+		modifiers.put(2,"private");	
+		modifiers.put(4,"protected");		
+		modifiers.put(1,"public");	
+		modifiers.put(8,"static");		
+		modifiers.put(2048,"strict");		
+		modifiers.put(32,"synchronized");	
+		modifiers.put(128,"transient");	
+		modifiers.put(64,"volatile");
+	}
+	
 	static String getStrModifier(int modifierNum)
 	{
-		String[] modifierStr = {"","public","private","unknown","protected","","","","static"};
+		if( modifierNum <= 0 )
+			return "";
+			
+		String modifierBin = Integer.toBinaryString(modifierNum);
 		
-		String modifier = "";
-    	if( modifierNum > modifierStr.length-1 )
-    		modifier = String.valueOf(modifierNum);
-    	else
-    		modifier = modifierStr[modifierNum];
-    	
-    	return modifier;
+		int numBits = modifierBin.length();
+		int offsetBin = 12 - modifierBin.length();
+		
+		String modiferStr = "";
+		for(int i = 0; i < numBits; i++)
+			if( modifierBin.charAt(i) == '1' )
+				modiferStr += modifierArray[offsetBin + i ] + " ";
+
+		return modiferStr;
 	}
 	
 	static Vector<String> getClassInPackage(String packagePath)
@@ -43,7 +68,8 @@ public class MainClass
 	
 	public static void main(String[] args) throws IOException
 	{
-
+		init();
+		
 	    	String projectPath = "C:/Github/javapackage2treegraph/";
 	    	String folderPath = "jp2tg/src/";
 	    	String[] packageList = {"package1"};
@@ -64,7 +90,7 @@ public class MainClass
 		    	
 		    	Vector<String> packClass = getClassInPackage( projectPath + folderPath + packageList[p] );
 				
-		    	for (int i = 0; i < packClass.size(); i++) 
+		    	for (int i = 1; i < packClass.size(); i++) 
 		    	{    		
 			    	Class c = null;
 					try {
@@ -84,7 +110,7 @@ public class MainClass
 			        	String className = field.getDeclaringClass().toString();
 			        	String[] tokens = className.split("\\.");
 			        	className = tokens[tokens.length-1];
-		
+					        	
 			        	bw.write( className + ',' +
 			        			  field.getName().toString() + ',' +
 			        			  field.getType().toString() + ',' +

@@ -2,7 +2,7 @@ package package1;
 
 public class CLass2 
 {
-	static final int packInt = 0;
+	final static int packInt = 0;
 	static public int[] pubInt;
 	static private int[] priInt;
 	static protected int[] proInt;
