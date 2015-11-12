@@ -1,8 +1,16 @@
 package1
-CLass2,packInt,class [S,static 
-CLass2,pubInt,class [I,static public 
-CLass2,priInt,class [I,static private 
-CLass2,proInt,class [I,static protected 
+Class1,packInt,int,
+Class1,pubInt,int,public 
+Class1,priInt,int,private 
+Class1,proInt,int,protected 
+Class1,function1(),
+Class1,function2(),public 
+Class1,function3(),private 
+Class1,function4(),protected 
+Class1,function5(),static 
+CLass2,pubInt,int[],static public 
+CLass2,priInt,int[],static private 
+CLass2,proInt,int[],static protected 
 CLass2,function1(),
 CLass2,function2(),public 
 CLass2,function3(),private 
