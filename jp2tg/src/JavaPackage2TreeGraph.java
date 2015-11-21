@@ -1,11 +1,20 @@
-import java.io.BufferedWriter;
+import java.io.IOException;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
-import java.io.IOException;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
+
+import java.util.List;
+import java.util.Arrays;
 import java.util.Vector;
+import java.util.ArrayList;
+import java.util.Collections;
+
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 public class JavaPackage2TreeGraph {
 	
@@ -13,7 +22,7 @@ public class JavaPackage2TreeGraph {
 	private String modifierArray[] = {	"strict","abstract","interface","native",
 							  			"transient","volatile","synchronized",
 							  			"final","static","protected","private","public"};
-	
+		
 	private String getStrModifier(int modifierNum)
 	{
 		if( modifierNum <= 0 )
@@ -29,6 +38,8 @@ public class JavaPackage2TreeGraph {
 			if( modifierBin.charAt(i) == '1' )
 				modiferStr += modifierArray[offsetBin + i] + " ";
 
+		modiferStr.substring(0, modiferStr.length()-2);
+		
 		return modiferStr;
 	}
 	
@@ -50,32 +61,33 @@ public class JavaPackage2TreeGraph {
     	return classNames;
 	}
 	
-	public void getPackageContents( String projectPath, String folderPath, String[] packageList) throws IOException
+	public static int[] range(int start, int stop, int step)
+	{
+		int len = Math.abs(stop-start);
+		int[] result = new int[len];
+		
+		for(int i = 0; i < len; i++)
+			result[i] = start + i*step;
+		
+		return result;
+	}
+	
+	public void getPackageContents( String projectPath, String folderPath, String[] packageList, String jsonPath)
 	{
     	for(int p = 0; p < packageList.length; p++)
-    	{
-        	File file = new File( projectPath + packageList[p] + ".txt");
-        	
-    		// if file doesnt exists, then create it
-    		if (!file.exists()) {
-    			file.createNewFile();
-    		}
-
-    		FileWriter fw = new FileWriter(file.getAbsoluteFile());
-    		BufferedWriter bw = new BufferedWriter(fw);
-    		
-    		bw.write( packageList[p] + "\n" );
-	    	
+    	{	    	
 	    	Vector<String> packClass = getClassInPackage( projectPath + folderPath + packageList[p] );
 			
+	    	List<String> packDetails = new ArrayList<String>();
+	    	
 	    	for (int i = 0; i < packClass.size(); i++) 
 	    	{    		
-		    	Class c = null;
+		    	@SuppressWarnings("rawtypes")
+				Class c = null;
 				try {
 					String classPath = packageList[p] + "." + packClass.get(i);
 					c = Class.forName( classPath );
 				} catch (ClassNotFoundException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				
@@ -88,11 +100,11 @@ public class JavaPackage2TreeGraph {
 		        	String className = field.getDeclaringClass().toString();
 		        	String[] tokens = className.split("\\.");
 		        	className = tokens[tokens.length-1];
-				        	
-		        	bw.write( className + ',' +
-		        			  field.getName() + ',' +
-		        			  field.getType().getCanonicalName() + ',' +
-		        			  getStrModifier(field.getModifiers()) + "\n");
+				       
+		        	packDetails.add(className + ',' +
+		        			  		field.getName() + ',' +
+		        			  		field.getType().getCanonicalName() + ',' +
+		        			  		getStrModifier(field.getModifiers()));
 		        }
 	
 		        Member[] allMembers = c.getDeclaredMethods();
@@ -102,12 +114,118 @@ public class JavaPackage2TreeGraph {
 		        	String[] tokens = memberName.split("\\.");
 		        	memberName = tokens[tokens.length-1];
 		        	
-		        	bw.write( memberName + "," +
-		        			  member.getName() + "()," +
-		        			  getStrModifier(member.getModifiers()) + "\n");
+		        	packDetails.add(memberName + "," +
+		        			  		member.getName() + "()," +
+		        			  		getStrModifier(member.getModifiers()));
 		        }
 	    	}
-	    	bw.close();
+	    	
+	    	JSONObject jsonObj = packDetails2json( packDetails );
+	    	
+	    	writeJSON( jsonObj, jsonPath + packageList[p] + ".json");
+	    	
     	}
+	}
+
+	public void writeJSON(JSONObject jsonObj, String jsonFilePath)
+	{
+		try (FileWriter file = new FileWriter( jsonFilePath )) 
+		{
+			file.write(jsonObj.toJSONString());
+			//System.out.println("Successfully Copied JSON Object to File...");
+			//System.out.println("\nJSON Object: " + jsonObj);
+		} 
+		catch (IOException e) 
+		{
+			e.printStackTrace();
+		}
+	}
+	
+	@SuppressWarnings("unchecked")
+	private JSONObject packDetails2json(List<String> packDetails) 
+	{
+		// Instantiate a dictionary to hold data
+		JSONObject data = new JSONObject();
+		JSONObject mainDict = new JSONObject();
+		
+		JSONArray classList = new JSONArray();
+		JSONArray subList = new JSONArray();
+		String name = "";
+		
+		for(int p = 0; p < packDetails.size(); p++)
+		{
+			String line = packDetails.get(p);
+			String[] arrline = line.split(",");
+			
+			if( arrline.length < 2 )
+				continue;
+			
+			if( name.length() == 0 )
+				name = arrline[0];
+			
+			String entry;
+			if( name.equals( arrline[0] ) )
+			{
+				entry = "";
+				int trange[] = range( arrline.length-1, 0 , -1);
+				for(int i : trange)
+					entry += arrline[i] + " ";
+				
+				JSONObject tmp = new JSONObject();
+				tmp.put("name", entry);
+				subList.add(tmp);
+			}
+			else
+			{
+				mainDict.put("children", subList.clone());
+				mainDict.put("name", name);
+				classList.add(mainDict.clone());
+				
+				mainDict.clear();
+				subList.clear();
+				entry = "";
+				
+				name = arrline[0];
+				int trange[] = range( arrline.length-1, 0, -1);
+				for(int i : trange)
+					entry += arrline[i] + " ";
+				
+				JSONObject tmp = new JSONObject();
+				tmp.put("name", entry);
+				subList.add(tmp);
+			}
+		}
+				
+		mainDict.put("name",name);
+		mainDict.put("children", subList.clone());
+		classList.add(mainDict.clone());
+				
+		mainDict.clear();
+		subList.clear();
+				
+		// Process the path
+		String[] packagePath = "package".split("\\.");
+		
+		List<String> list = Arrays.asList(packagePath);
+		Collections.reverse(list);
+		packagePath = (String[]) list.toArray();
+		
+		for( String pack : packagePath )
+		{
+			JSONObject tmpData = new JSONObject();
+			tmpData.put("name", pack);
+			if( data.size() == 0 )
+			{
+				tmpData.put("children", classList.clone());
+				data = tmpData;
+			}
+			else
+			{
+				tmpData.put("children", data.clone());
+				data = tmpData;
+			}
+		}
+				
+		return data;
 	}
 }
